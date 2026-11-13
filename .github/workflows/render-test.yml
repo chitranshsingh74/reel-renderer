@@ -1,0 +1,68 @@
+
+name: Render Water Cycle Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Render HTML animation
+        run: |
+          mkdir frames
+          cat > render.js <<'EOF'
+          const { chromium } = require('playwright');
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({
+              viewport: { width: 1080, height: 1920 },
+              deviceScaleFactor: 1
+            });
+
+            await page.goto('file://' + process.cwd() + '/water-cycle.html');
+            await page.waitForTimeout(2000);
+
+            const duration = 10;
+            const fps = 30;
+
+            for (let i = 0; i < duration * fps; i++) {
+              await page.evaluate((t) => {
+                if (window.renderFrame) window.renderFrame(t);
+              }, i / fps);
+
+              await page.screenshot({
+                path: `frames/frame${String(i).padStart(4, '0')}.png`
+              });
+            }
+
+            await browser.close();
+          })();
+          EOF
+
+          node render.js
+
+      - name: Create MP4
+        run: |
+          ffmpeg -y -framerate 30 \
+            -i frames/frame%04d.png \
+            -c:v libx264 -pix_fmt yuv420p \
+            water-cycle.mp4
+
+      - name: Upload MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: water-cycle-video
+          path: water-cycle.mp4
