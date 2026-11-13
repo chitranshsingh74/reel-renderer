@@ -1,0 +1,28 @@
+
+name: Cloud Renderer Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Test rendering environment
+        run: |
+          echo "Python:"
+          python3 --version
+
+          echo "FFmpeg:"
+          ffmpeg -version | head -n 1
+
+          echo "FFprobe:"
+          ffprobe -version | head -n 1
+
+          echo "Cloud renderer is ready!"
