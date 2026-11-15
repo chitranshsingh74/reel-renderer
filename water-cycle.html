@@ -1,26 +1,194 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-<meta charset="utf-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">  
-<title>The Water Cycle – 10s Animation</title>  
-<!--  
-RECORDING / FFMPEG  
- ?record=1          exact 1080x1920 stage, no UI, autoplays once (screen-record a 1080x1920 viewport)  
- ?record=1&manual=1 no autoplay; step frames: window.renderFrame(i/30) for i=0..300, screenshot each, then  
-   ffmpeg -framerate 30 -i f%04d.png -c:v libx264 -pix_fmt yuv420p out.mp4  
- Everything is a pure function of time t (0-10 s), so frames are exact. window.DURATION = 10.  
--->  
-<style>  
-:root{--page:#e6f0f7;--ink:#12324d;--btn:#1565c0;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}  
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#0b1722;--ink:#e6f1fa;--btn:#4aa3ff;--btnink:#06121d}}  
-:root[data-theme="dark"]{--page:#0b1722;--ink:#e6f1fa;--btn:#4aa3ff;--btnink:#06121d}  
-html,body{height:100%;margin:0}  
-body{background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}  
-#wrap{position:relative;overflow:hidden;flex:none}  
-#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0}  
-svg{display:block}  
-#bar{display:flex;gap:12px;align-items:center;height:68px;width:min(100%,520px);padding:0 14px;box-sizing:border-box;flex:none}  
-#bar button{font:inherit;font-weight:700;background:var(--btn);color:var(--btnink);border:0;border-radius:999px;padding:8px 18px;min-width:84px}  
-#bar input{flex:1;min-width:0}  
-#tl{font-variant-numeric:tabular-nums;font-size:14px;width:48px;text-align:right}  
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Water Cycle – 10s Animation</title>
+<!--
+RECORDING / FFMPEG
+ ?record=1          exact 1080x1920 stage, no UI, autoplays once (screen-record a 1080x1920 viewport)
+ ?record=1&manual=1 no autoplay; step frames: window.renderFrame(i/30) for i=0..300, screenshot each, then
+   ffmpeg -framerate 30 -i f%04d.png -c:v libx264 -pix_fmt yuv420p out.mp4
+ Everything is a pure function of time t (0-10 s), so frames are exact. window.DURATION = 10.
+-->
+<style>
+:root{--page:#e6f0f7;--ink:#12324d;--btn:#1565c0;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#0b1722;--ink:#e6f1fa;--btn:#4aa3ff;--btnink:#06121d}}
+:root[data-theme="dark"]{--page:#0b1722;--ink:#e6f1fa;--btn:#4aa3ff;--btnink:#06121d}
+html,body{height:100%;margin:0}
+body{background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+#wrap{position:relative;overflow:hidden;flex:none}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0}
+svg{display:block}
+#bar{display:flex;gap:12px;align-items:center;height:68px;width:min(100%,520px);padding:0 14px;box-sizing:border-box;flex:none}
+#bar button{font:inherit;font-weight:700;background:var(--btn);color:var(--btnink);border:0;border-radius:999px;padding:8px 18px;min-width:84px}
+#bar input{flex:1;min-width:0}
+#tl{font-variant-numeric:tabular-nums;font-size:14px;width:48px;text-align:right}
 .rec{background:#000;justify-content:flex-start;align-items:flex-start}
+.rec #bar{display:none}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<svg id="svg" viewBox="0 0 1080 1920" width="1080" height="1920" xmlns="http://www.w3.org/2000/svg" font-family="'Trebuchet MS','Arial Rounded MT Bold',Verdana,Arial,sans-serif" font-weight="800">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop id="s0" offset="0" stop-color="#4FB6FF"/><stop id="s1" offset="1" stop-color="#D3F0FF"/></linearGradient>
+<linearGradient id="lakeg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4FC3F7"/><stop offset="1" stop-color="#0277BD"/></linearGradient>
+<linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9BE0FF"/><stop offset="1" stop-color="#29A8F0"/></linearGradient>
+<path id="drop" d="M0-24C10-8 17 3 17 13A17 17 0 0 1-17 13C-17 3-10-8 0-24Z"/>
+<path id="star" d="M0-30L7-7 30 0 7 7 0 30-7 7-30 0-7-7Z"/>
+<g id="cshape"><circle cx="-110" cy="40" r="62"/><circle cx="-35" cy="-5" r="88"/><circle cx="72" cy="5" r="76"/><circle cx="145" cy="48" r="56"/><rect x="-172" y="40" width="372" height="72" rx="36"/></g>
+</defs>
+<rect width="1080" height="1920" fill="url(#sky)"/>
+<g id="sun"><circle id="glow" r="150" fill="#FFF59D" opacity="0"/><g id="rays" stroke="#FFB300" stroke-width="16" stroke-linecap="round"><line x1="104" x2="140"/><line x1="104" x2="140" transform="rotate(30)"/><line x1="104" x2="140" transform="rotate(60)"/><line x1="104" x2="140" transform="rotate(90)"/><line x1="104" x2="140" transform="rotate(120)"/><line x1="104" x2="140" transform="rotate(150)"/><line x1="104" x2="140" transform="rotate(180)"/><line x1="104" x2="140" transform="rotate(210)"/><line x1="104" x2="140" transform="rotate(240)"/><line x1="104" x2="140" transform="rotate(270)"/><line x1="104" x2="140" transform="rotate(300)"/><line x1="104" x2="140" transform="rotate(330)"/></g>
+<circle r="84" fill="#FFD83B" stroke="#F9A825" stroke-width="9"/>
+<g fill="none" stroke="#E65100" stroke-width="7" stroke-linecap="round"><path d="M-38-6Q-26-26-14-6"/><path d="M14-6Q26-26 38-6"/><path d="M-28 22Q0 52 28 22"/></g>
+<circle cx="-48" cy="20" r="11" fill="#FF8A65" opacity=".6"/><circle cx="48" cy="20" r="11" fill="#FF8A65" opacity=".6"/></g>
+<use id="bc1" href="#cshape" fill="#fff" opacity=".85"/><use id="bc2" href="#cshape" fill="#fff" opacity=".85"/>
+<g id="mtn"><path d="M-120 1480L200 1150 520 1480Z" fill="#90A4AE"/><path d="M200 1150L150 1230 185 1215 200 1255 225 1215 255 1230Z" fill="#fff"/>
+<path d="M540 1480L860 980 1180 1480Z" fill="#78909C"/><path d="M860 980L795 1080 835 1062 860 1105 892 1062 930 1080Z" fill="#fff"/></g>
+<path d="M-50 1490C150 1340 350 1340 520 1430 700 1340 900 1370 1130 1490Z" fill="#81C784"/>
+<path d="M-50 1510C100 1410 300 1410 460 1510Z" fill="#5FB664"/>
+<g id="tr1"><rect x="-12" y="-10" width="24" height="70" fill="#8D6E63"/><circle cy="-50" r="52" fill="#43A047"/><circle cx="-20" cy="-40" r="20" fill="#66BB6A" opacity=".7"/></g>
+<g id="tr2"><rect x="-10" y="-10" width="20" height="56" fill="#8D6E63"/><circle cy="-38" r="40" fill="#388E3C"/></g>
+<g id="ring" opacity="0"><circle id="rg1" r="430" fill="none" stroke="#1976D2" stroke-width="24" stroke-linecap="round" pathLength="100" transform="rotate(-90)"/><circle id="rg2" r="430" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" pathLength="100" transform="rotate(-90)"/>
+<g id="arrows" fill="#fff" stroke="#1976D2" stroke-width="8" stroke-linejoin="round"><path d="M-30-24L0 28 30-24Z" transform="rotate(40) translate(430 0)"/><path d="M-30-24L0 28 30-24Z" transform="rotate(160) translate(430 0)"/><path d="M-30-24L0 28 30-24Z" transform="rotate(280) translate(430 0)"/></g></g>
+<path id="lake" fill="url(#lakeg)"/>
+<g id="vap"></g><g id="dots"></g>
+<g id="cloud"><use id="cOut" href="#cshape" stroke-width="18" stroke-linejoin="round"/><use id="cIn" href="#cshape"/>
+<g><circle cx="-24" cy="46" r="9" fill="#37474F"/><circle cx="62" cy="46" r="9" fill="#37474F"/><path d="M0 64Q19 84 38 64" stroke="#37474F" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="-54" cy="68" r="12" fill="#FFAB91" opacity=".7"/><circle cx="92" cy="68" r="12" fill="#FFAB91" opacity=".7"/></g></g>
+<g id="rain"></g>
+<g id="drip"><g fill="none" stroke="#0277BD" stroke-width="14" stroke-linecap="round"><path id="aL"/><path id="aR"/></g>
+<path d="M0-90C40-30 70 10 70 45C70 90 38 115 0 115C-38 115-70 90-70 45C-70 10-40-30 0-90Z" fill="url(#dg)" stroke="#0277BD" stroke-width="8" stroke-linejoin="round"/>
+<path d="M-34 22Q-46 50-38 74" stroke="#fff" stroke-opacity=".75" stroke-width="9" fill="none" stroke-linecap="round"/>
+<g id="eL"><ellipse rx="18" ry="20" fill="#fff" stroke="#0277BD" stroke-width="4"/><circle id="pL" r="9" fill="#0D2B45"/></g>
+<g id="eR"><ellipse rx="18" ry="20" fill="#fff" stroke="#0277BD" stroke-width="4"/><circle id="pR" r="9" fill="#0D2B45"/></g>
+<circle cx="-48" cy="62" r="10" fill="#FF8A80" opacity=".65"/><circle cx="48" cy="62" r="10" fill="#FF8A80" opacity=".65"/>
+<path id="mo" fill="#01579B" stroke="#01579B" stroke-width="5" stroke-linejoin="round"/></g>
+<path id="lakeF" fill="#01579B" opacity=".42"/>
+<g id="hl" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".6"><line id="h0" x2="90"/><line id="h1" x2="70"/><line id="h2" x2="110"/></g>
+<g id="rip"></g><g id="spl"></g><g id="spk"></g>
+<g id="t1" font-size="34" text-anchor="middle"><rect x="-160" y="-36" width="320" height="72" rx="36" fill="#fff" stroke="#1565C0" stroke-width="6"/><text y="12" fill="#1565C0">water vapor</text></g>
+<g id="t2" font-size="34" text-anchor="middle"><rect x="-100" y="-36" width="200" height="72" rx="36" fill="#fff" stroke="#1565C0" stroke-width="6"/><text y="12" fill="#1565C0">cloud</text></g>
+<g id="t3" font-size="34" text-anchor="middle"><rect x="-100" y="-36" width="200" height="72" rx="36" fill="#fff" stroke="#1565C0" stroke-width="6"/><text y="12" fill="#1565C0">rain</text></g>
+<g id="title" font-weight="900" text-anchor="middle" fill="#fff" stroke="#0D47A1" stroke-width="16" stroke-linejoin="round" paint-order="stroke"><text y="-10" font-size="130" textLength="880" lengthAdjust="spacingAndGlyphs">THE WATER</text><text y="130" font-size="130" fill="#FFD54F" textLength="520" lengthAdjust="spacingAndGlyphs">CYCLE</text></g>
+<g id="panel"><rect x="48" y="1700" width="1000" height="200" rx="46" fill="#0D47A1" opacity=".35"/><rect x="40" y="1690" width="1000" height="200" rx="46" fill="#fff" stroke="#0D47A1" stroke-width="6"/>
+<g id="badge"><circle id="bc" r="64" stroke="#fff" stroke-width="6"/><text id="bn" y="26" font-size="76" text-anchor="middle" fill="#fff" font-weight="900"></text></g>
+<g id="pin"><text id="pt" x="240" y="1783" font-size="62" font-weight="900" fill="#0D47A1"></text><text id="ps" x="240" y="1842" font-size="38" fill="#37597A" font-weight="700"></text></g></g>
+<rect id="wipe" width="220" height="1920" fill="#fff" opacity="0"/>
+</svg>
+</div></div>
+<div id="bar"><button id="btn">Pause</button><input id="rng" type="range" min="0" max="10" step="0.01" value="0" aria-label="Timeline"><span id="tl">0.0s</span></div>
+<script>
+const D=10,NS='http://www.w3.org/2000/svg',Q=location.search;
+const REC=/[?&]record=1/.test(Q),MANUAL=/[?&]manual=1/.test(Q);
+const E=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=k=>1-Math.pow(1-k,3),ei=k=>k*k,eio=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+const eb=k=>1+2.70158*Math.pow(k-1,3)+1.70158*Math.pow(k-1,2);
+const rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+const mix=(a,b,k)=>{const A=rgb(a),B=rgb(b);return 'rgb('+A.map((v,i)=>Math.round(lerp(v,B[i],k))).join()+')'};
+const mk=(tag,at,par)=>{const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);par.appendChild(e);return e};
+const T=(e,v)=>e.setAttribute('transform',v),O=(e,v)=>e.setAttribute('opacity',v);
+const N=(n,f)=>Array.from({length:n},(_,i)=>f(i));
+const dots=N(9,()=>mk('use',{href:'#drop',fill:'#fff',stroke:'#4FC3F7','stroke-width':4},E('dots')));
+const rain=N(22,()=>mk('use',{href:'#drop',fill:'#4FC3F7',stroke:'#0277BD','stroke-width':3},E('rain')));
+const spl=N(7,()=>mk('use',{href:'#drop',fill:'#81D4FA',stroke:'#0277BD','stroke-width':3},E('spl')));
+const rip=N(3,()=>mk('ellipse',{fill:'none',stroke:'#fff','stroke-width':7},E('rip')));
+const spkP=[[300,1250],[790,1230],[170,1020],[910,1060],[400,930],[690,940]];
+const spk=N(6,()=>mk('use',{href:'#star',fill:'#FFEE58',stroke:'#F9A825','stroke-width':3},E('spk')));
+const vp=N(3,()=>mk('path',{fill:'none',stroke:'#fff','stroke-width':13,'stroke-linecap':'round','stroke-dasharray':'30 26'},E('vap')));
+const ST=[[0,'!','MEET DRIP!','Follow one drop on its journey.','#FF7043'],
+[1.8,'1','EVAPORATION','The Sun heats water into vapor.','#FFB300'],
+[3.8,'2','CONDENSATION','Vapor cools and forms clouds.','#78909C'],
+[6.0,'3','PRECIPITATION','Water falls back down as rain.','#29B6F6'],
+[8.2,'∞','IT NEVER STOPS!','Water goes round and round.','#43A047']];
+let lastIdx=-1;
+function wave(y0,amp,ph,bot){let d='M0 '+bot+' L0 '+(y0+Math.sin(ph)*amp).toFixed(1);for(let x=0;x<=1080;x+=30)d+=' L'+x+' '+(y0+Math.sin(x*.018+ph)*amp).toFixed(1);return d+' L1080 '+bot+' Z'}
+function dripState(t){
+ const o={x:540,y:1460,s:1.2,sx:1,sy:1,rot:0,a:1,mo:.8,w:0,ly:0};
+ if(t<.3)o.a=0;
+ else if(t<1.2){const k=seg(t,.3,1.2),b=Math.sin(k*Math.PI)*.1;o.y=lerp(1650,1450,eb(k));o.sy=1+b;o.sx=1-b;o.w=k>.7?1:0;o.mo=.9}
+ else if(t<1.9){o.y=1450+Math.sin((t-1.2)*8)*6;o.w=1;o.mo=.95}
+ else if(t<3.6){const k=seg(t,1.9,3.6),b=.16*Math.sin(k*Math.PI);o.y=lerp(1450,830,eio(k));o.x=540+Math.sin(k*11)*38*Math.sin(k*Math.PI);o.sy=1+b;o.sx=1-b*.8;o.rot=Math.cos(k*11)*.12;o.w=.6;o.mo=.55;o.ly=-6}
+ else if(t<4.25){const k=seg(t,3.6,4.25);o.y=lerp(830,660,eio(k));o.s=lerp(1.2,.15,eo(k));o.a=1-seg(t,4,4.25);o.ly=-6;o.mo=.4}
+ else if(t<6.0)o.a=0;
+ else if(t<6.4){const k=seg(t,6,6.4);o.y=lerp(700,790,eo(k));o.s=lerp(.1,1.2,eb(k));o.mo=1;o.w=1}
+ else if(t<7.5){const k=seg(t,6.4,7.5),b=.22*k;o.y=lerp(790,1470,ei(k));o.sy=1+b;o.sx=1-b*.7;o.w=1;o.mo=1;o.ly=7}
+ else{const u=t-7.5,q=Math.exp(-u*5)*Math.cos(u*17);o.sy=1-.3*q;o.sx=1+.25*q;o.y=1475+Math.sin(u*4)*9;o.w=u>.8?1:.3;o.mo=.95}
+ return o}
+function tag(id,a,b,x,y,t){const k=Math.max(.001,eb(seg(t,a,a+.35))),al=seg(t,a,a+.2)*(1-seg(t,b-.25,b));T(E(id),`translate(${x},${y}) scale(${k})`);O(E(id),al)}
+function render(t){
+ t=clamp(t,0,D);
+ const rk=seg(t,4.6,6.2)*(1-seg(t,8,9));
+ E('s0').setAttribute('stop-color',mix('#4FB6FF','#8AA4B8',rk));E('s1').setAttribute('stop-color',mix('#D3F0FF','#C9D6DF',rk));
+ const sk=Math.max(.001,eb(seg(t,1.2,1.9)));
+ T(E('sun'),`translate(170,${lerp(580,420,Math.min(1,sk))}) scale(${sk*(1+.05*Math.sin(t*7))})`);O(E('sun'),1-.5*rk);
+ T(E('rays'),`rotate(${t*40})`);
+ O(E('glow'),.6*seg(t,1.8,2.4)*(1-seg(t,3.4,3.9)));
+ T(E('bc1'),`translate(${850-t*14},330) scale(.5)`);T(E('bc2'),`translate(${200+t*10},800) scale(.42)`);
+ T(E('tr1'),`translate(120,1440) rotate(${Math.sin(t*2)*2})`);T(E('tr2'),`translate(250,1450) rotate(${Math.sin(t*2+1)*2.5})`);
+ const la=t>7.5?6+16*Math.exp(-(t-7.5)*3):6;
+ E('lake').setAttribute('d',wave(1470,la,t*2.4,1710));E('lakeF').setAttribute('d',wave(1555,la*.8,t*2.4+1.5,1710));
+ [0,1,2].forEach(i=>{const x=((i*330+t*45)%1200)-90;const h=E('h'+i);h.setAttribute('x1',x);h.setAttribute('x2',x+[90,70,110][i]);h.setAttribute('y1',1595+i*32);h.setAttribute('y2',1595+i*32)});
+ const rg=eo(seg(t,8.2,9));
+ O(E('ring'),rg>0?1:0);T(E('ring'),`translate(540,1000) rotate(${(t-8.2)*18})`);
+ ['rg1','rg2'].forEach(id=>E(id).setAttribute('stroke-dasharray',`${rg*98} 200`));
+ O(E('arrows'),seg(t,8.8,9.1));
+ const vk=seg(t,1.9,3.3),va=seg(t,1.9,2.3)*(1-seg(t,3.3,3.7));
+ vp.forEach((p,i)=>{let d='';const top=1440-vk*600;for(let y=1440;y>=top;y-=20){d+=(d?'L':'M')+(360+i*180+Math.sin(y*.02+t*5+i)*18).toFixed(1)+' '+y+' '}
+  p.setAttribute('d',d||'M0 0');p.setAttribute('stroke-dashoffset',-t*160);O(p,va*.9)});
+ dots.forEach((d,i)=>{const a=i*.72+.3,sx=540+Math.cos(a)*420,sy=600+Math.sin(a)*250,k=seg(t,3.7+i*.1,4.9+i*.1),e=eio(k);
+  T(d,`translate(${lerp(sx,540,e)},${lerp(sy,640,e)}) scale(${lerp(1.2,.4,k)})`);O(d,k>0&&k<1?Math.min(1,k*6)*(1-seg(k,.8,1)):0)});
+ const en=eo(seg(t,1.4,2.2)),pre=eio(seg(t,4.1,5.8)),st=eio(seg(t,8,9));
+ let cx=lerp(1400,540,en),cy=620+Math.sin(t*1.6)*8,sc=1+.3*pre+.14*Math.sin(seg(t,3.95,4.4)*Math.PI);
+ const sq=.12*Math.sin(seg(t,5.95,6.5)*Math.PI);
+ let sx=lerp(sc+sq,1,st),sy=lerp(sc-sq,1,st);
+ if(t>6.2&&t<8)cx+=Math.sin(t*40)*4;
+ const dk=(pre*.6+seg(t,6.2,6.6)*.4)*(1-st);
+ T(E('cloud'),`translate(${cx},${cy}) scale(${sx},${sy})`);
+ const co=mix('#9FB4C4','#5F7A8C',dk),ci=mix('#FFFFFF','#9FB2C0',dk);
+ E('cOut').setAttribute('fill',co);E('cOut').setAttribute('stroke',co);E('cIn').setAttribute('fill',ci);
+ const ra=seg(t,6.2,6.5)*(1-seg(t,7.7,8.1));
+ rain.forEach((d,i)=>{const x0=410+(i*47)%260,p=(Math.max(0,t-6.2)*1.5+(i*.618)%1)%1;
+  T(d,`translate(${540+(x0-540)*(1+p*2.2)},${790+p*680}) scale(1.25,1.5)`);O(d,ra)});
+ const o=dripState(t),w=o.w,bl=(t%2.7)>2.6?.1:1;
+ T(E('drip'),`translate(${o.x},${o.y}) rotate(${o.rot*57.3}) scale(${o.s*o.sx},${o.s*o.sy})`);O(E('drip'),o.a);
+ T(E('eL'),`translate(-26,34) scale(1,${bl})`);T(E('eR'),`translate(26,34) scale(1,${bl})`);
+ ['pL','pR'].forEach(id=>{E(id).setAttribute('cx',Math.sin(t*2)*3);E(id).setAttribute('cy',o.ly)});
+ E('mo').setAttribute('d',`M-24 66Q0 ${66+o.mo*46} 24 66Z`);
+ E('aL').setAttribute('d',`M-58 60Q-92 ${58-20*w} -112 ${50-40*w+Math.sin(t*12+1)*10*w}`);
+ E('aR').setAttribute('d',`M58 60Q92 ${58-30*w} 112 ${50-60*w+Math.sin(t*14)*16*w}`);
+ const u=t-7.5;
+ spl.forEach((d,i)=>{const v=u>0&&u<.75;const vx=(i-3)*90,vy=-520-(i%3)*80;T(d,`translate(${540+vx*u},${1500+vy*u+900*u*u}) scale(.9)`);O(d,v?1-u/.75:0)});
+ rip.forEach((r,j)=>{const k=(t-7.55-j*.22)/.9,v=k>0&&k<1,rx=60+clamp(k)*340;r.setAttribute('cx',540);r.setAttribute('cy',1520);r.setAttribute('rx',rx);r.setAttribute('ry',rx*.16);O(r,v?1-k:0)});
+ spk.forEach((s,i)=>{const k=seg(t,8.5+i*.1,8.8+i*.1);T(s,`translate(${spkP[i][0]},${spkP[i][1]}) rotate(${t*60}) scale(${Math.max(.001,eb(k))*(1+.2*Math.sin(t*10+i))*.9})`);O(s,k>0?1:0)});
+ tag('t1',2.5,3.7,200,1130,t);tag('t2',4.7,6.0,905,470,t);tag('t3',6.5,8.0,905,900,t);
+ const k1=Math.max(.001,eb(seg(t,0,.7))),m=eio(seg(t,1.3,1.9));
+ T(E('title'),`translate(540,${lerp(560,120,m)}) scale(${lerp(1,.55,m)*k1})`);
+ let idx=0;ST.forEach((s,i)=>{if(t>=s[0])idx=i});
+ if(idx!==lastIdx){const s=ST[idx];E('bn').textContent=s[1];E('pt').textContent=s[2];E('ps').textContent=s[3];E('bc').setAttribute('fill',s[4]);lastIdx=idx}
+ const us=t-ST[idx][0];
+ T(E('panel'),`translate(0,${lerp(300,0,eo(seg(t,.5,1.1)))})`);
+ T(E('badge'),`translate(140,1790) scale(${Math.max(.001,eb(clamp(us/.45)))})`);
+ T(E('pin'),`translate(${(1-eo(clamp(us/.4)))*90},0)`);O(E('pin'),clamp(us/.25));
+ let wx=-600,wa=0;[1.8,3.8,6.0,8.2].forEach(b=>{const d=(t-(b-.2))/.5;if(d>0&&d<1){wx=lerp(-400,1400,eio(d));wa=.6}});
+ T(E('wipe'),`translate(${wx},0) skewX(-14)`);O(E('wipe'),wa);
+ E('rng').value=t;E('tl').textContent=t.toFixed(1)+'s';
+}
+const stage=E('stage'),wrap=E('wrap'),btn=E('btn'),rng=E('rng');
+let TT=0,playing=!MANUAL,last=0;
+function fit(){const c=REC?0:68,s=REC?1:Math.min(innerWidth/1080,(innerHeight-c)/1920);stage.style.transform=`scale(${s})`;wrap.style.width=1080*s+'px';wrap.style.height=1920*s+'px'}
+function loop(now){if(!last)last=now;if(playing){TT+=(now-last)/1000;if(TT>=D){TT=D;playing=false;btn.textContent='Replay';window.__done=true}render(TT)}last=now;requestAnimationFrame(loop)}
+btn.onclick=()=>{if(TT>=D){TT=0;window.__done=false}playing=!playing;btn.textContent=playing?'Pause':'Play'};
+rng.oninput=()=>{TT=+rng.value;playing=false;btn.textContent='Play';render(TT)};
+if(REC)document.body.classList.add('rec');
+window.DURATION=D;window.FPS=30;window.renderFrame=window.seek=t=>{TT=t;render(t)};
+addEventListener('resize',fit);fit();
+const q=Q.match(/[?&]t=([\d.]+)/);if(q){TT=+q[1];playing=false}
+render(TT);if(MANUAL||q)btn.textContent='Play';
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
