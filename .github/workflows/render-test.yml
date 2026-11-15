@@ -1,4 +1,4 @@
-name: Render Water Cycle Test
+name: Render Reel
 
 on:
   workflow_dispatch:
