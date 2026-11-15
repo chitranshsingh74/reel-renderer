@@ -1,7 +1,13 @@
+
 name: Render Reel
 
 on:
   workflow_dispatch:
+    inputs:
+      html_file:
+        description: "HTML file to render"
+        required: true
+        default: "water-cycle.html"
 
 jobs:
   render:
@@ -18,50 +24,100 @@ jobs:
           npm install playwright
           npx playwright install --with-deps chromium
 
-      - name: Render HTML animation
+      - name: Validate HTML
+        env:
+          HTML_FILE: ${{ inputs.html_file }}
         run: |
-          mkdir frames
+          if [ ! -f "$HTML_FILE" ]; then
+            echo "ERROR: HTML file not found: $HTML_FILE"
+            exit 1
+          fi
+
+      - name: Render animation
+        env:
+          HTML_FILE: ${{ inputs.html_file }}
+        run: |
+          mkdir -p frames
+
           cat > render.js <<'EOF'
           const { chromium } = require('playwright');
+          const path = require('path');
 
           (async () => {
             const browser = await chromium.launch({ headless: true });
-            const page = await browser.newPage({
-              viewport: { width: 1080, height: 1920 },
-              deviceScaleFactor: 1
-            });
 
-            await page.goto('file://' + process.cwd() + '/water-cycle.html');
-            await page.waitForTimeout(2000);
-
-            const duration = 10;
-            const fps = 30;
-
-            for (let i = 0; i < duration * fps; i++) {
-              await page.evaluate((t) => {
-                if (window.renderFrame) window.renderFrame(t);
-              }, i / fps);
-
-              await page.screenshot({
-                path: `frames/frame${String(i).padStart(4, '0')}.png`
+            try {
+              const page = await browser.newPage({
+                viewport: { width: 1080, height: 1920 },
+                deviceScaleFactor: 1
               });
-            }
 
-            await browser.close();
-          })();
+              page.on('pageerror', error => {
+                console.error('PAGE ERROR:', error.message);
+              });
+
+              const file = path.resolve(process.env.HTML_FILE);
+
+              await page.goto(
+                'file://' + file + '?record=1&manual=1',
+                { waitUntil: 'load' }
+              );
+
+              await page.waitForTimeout(1000);
+
+              const ready = await page.evaluate(() => {
+                return Boolean(
+                  document.querySelector('#stage') &&
+                  window.renderFrame
+                );
+              });
+
+              if (!ready) {
+                throw new Error(
+                  'Animation stage or window.renderFrame() missing'
+                );
+              }
+
+              const duration = 10;
+              const fps = 30;
+              const totalFrames = duration * fps;
+
+              for (let i = 0; i < totalFrames; i++) {
+                await page.evaluate(t => {
+                  window.renderFrame(t);
+                }, i / fps);
+
+                await page.screenshot({
+                  path: `frames/frame${String(i).padStart(4, '0')}.png`
+                });
+              }
+
+              console.log(`Rendered ${totalFrames} frames successfully.`);
+            } finally {
+              await browser.close();
+            }
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
           EOF
 
           node render.js
 
       - name: Create MP4
         run: |
-          ffmpeg -y -framerate 30 \
+          ffmpeg -y \
+            -framerate 30 \
             -i frames/frame%04d.png \
-            -c:v libx264 -pix_fmt yuv420p \
-            water-cycle.mp4
+            -frames:v 300 \
+            -c:v libx264 \
+            -pix_fmt yuv420p \
+            -movflags +faststart \
+            reel.mp4
 
-      - name: Upload MP4
+      - name: Upload video
         uses: actions/upload-artifact@v4
         with:
-          name: water-cycle-video
-          path: water-cycle.mp4
+          name: generated-reel
+          path: reel.mp4
+          if-no-files-found: error
